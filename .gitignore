@@ -3,6 +3,7 @@
 .ipynb_checkpoints
 .mypy_cache
 .vscode
+.quickdrawcache
 __pycache__
 .pytest_cache
 htmlcov
