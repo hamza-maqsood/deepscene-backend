@@ -58,8 +58,9 @@ Add additional notes about how to deploy this on a live system.
 - [ReDoc](/redoc) - Alternate Documentation
 
 ## ✍️ Authors
+- [hamza-maqsood](https://github.com/hamza-maqsood)
 - [@zohairhadi](https://github.com/zohairhadi)
-- [@mannan]
+- [@mannan]((https://github.com/mannan))
 
 ## 🎉 Acknowledgements
 - Good enough
