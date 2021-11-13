@@ -17,3 +17,5 @@ quickdraw == 0.2.0
 
 # app/routers/nlp.py: 5
 speechrecognition == 3.8.1
+
+uvicorn==0.12.3
