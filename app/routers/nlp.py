@@ -1,7 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
-# from ..nlp.speech_to_text import NLPEngine
 import nltk
 import speech_recognition as sr
 
@@ -12,7 +11,7 @@ class NLPEngine:
         nltk.download('punkt')
         nltk.download('averaged_perceptron_tagger')
 
-    def generate_pos_tags(self,text: str):
+    def generate_pos_tags(self, text: str):
         to_return = TaggedSpeech()
         # tokenize the sentence
         tokens = nltk.word_tokenize(text)
@@ -45,10 +44,11 @@ nlp_engine = NLPEngine()
 class InputSpeech(BaseModel):
     text: str
 
+
 class TaggedSpeech(BaseModel):
     tokens: Optional[str]
     tags: Optional[str]
-    
+
 
 # routes
 @router.post("/tag-speech", tags=["nlp"])

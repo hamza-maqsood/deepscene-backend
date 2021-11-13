@@ -46,6 +46,9 @@ Launch the server using the following command:
 ```
 uvicorn main:app --reload
 ```
+How to run
+    
+    uvicorn app.main:app --reload --port=9000
 
 ## 🚀 Deployment
 Add additional notes about how to deploy this on a live system.
@@ -55,8 +58,9 @@ Add additional notes about how to deploy this on a live system.
 - [ReDoc](/redoc) - Alternate Documentation
 
 ## ✍️ Authors
+- [hamza-maqsood](https://github.com/hamza-maqsood)
 - [@zohairhadi](https://github.com/zohairhadi)
-- [@mannan]
+- [@mannan]((https://github.com/mannan))
 
 ## 🎉 Acknowledgements
 - Good enough
