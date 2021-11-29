@@ -4,6 +4,8 @@ from pydantic import BaseModel
 import nltk
 import speech_recognition as sr
 
+from app.nlp.information_extraction import InfoExtractor
+
 
 class NLPEngine:
 
@@ -39,6 +41,7 @@ class NLPEngine:
 
 router = APIRouter()
 nlp_engine = NLPEngine()
+info_extractor = InfoExtractor()
 
 
 class InputSpeech(BaseModel):
@@ -55,3 +58,8 @@ class TaggedSpeech(BaseModel):
 async def pos_tag(texts: InputSpeech):
     tags = nlp_engine.generate_pos_tags(text=texts.text)
     return tags
+
+
+@router.get("/tuples/{text}", tags=["nlp"])
+async def info_extract(text: str):
+    return info_extractor.extract_tuples(text=text)
