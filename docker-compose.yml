@@ -1,0 +1,20 @@
+version: "3"
+services:
+    corenlp:
+        image: graham3333/corenlp-complete
+        ports:
+            - "9000:9000"
+#    consumer:
+#        image: consumer:latest
+#        ports:
+#            - "5001:5001"
+#        links:
+#        - rabbit
+#        volumes:
+#            - ./rabbitMqConsumerFlask/:/usr/src/app/
+#    rabbit:
+#        hostname: rabbit
+#        image: rabbitmq:management
+#        ports:
+#            - "5672:5672"
+#            - "15672:15672"

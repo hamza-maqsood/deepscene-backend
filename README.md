@@ -52,7 +52,7 @@ How to run
 
 How to run without auto reload
 
-    uvicorn app.main:app --reload --port=9001
+    uvicorn app.main:app --port=9001
 
 ## 🚀 Deployment
 Add additional notes about how to deploy this on a live system.

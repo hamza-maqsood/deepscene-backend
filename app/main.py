@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 
 import app.routers.common_sense as common_sense
 import app.routers.entity as entity
