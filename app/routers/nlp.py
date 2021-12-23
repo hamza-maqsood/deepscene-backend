@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nltk
+# import requests
 import speech_recognition as sr
 
 from app.nlp.information_extraction import InfoExtractor
@@ -63,3 +64,7 @@ async def pos_tag(texts: InputSpeech):
 @router.get("/tuples/{text}", tags=["nlp"])
 async def info_extract(text: str):
     return info_extractor.extract_tuples(text=text)
+
+@router.get("/placement/{text}", tags=["nlp"])
+async def identify_placement(text: str):
+    return info_extractor.identify_placement(text=text)
