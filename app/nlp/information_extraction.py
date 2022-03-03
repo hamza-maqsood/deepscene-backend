@@ -1,10 +1,11 @@
-from openie import StanfordOpenIE
 from monkeylearn import MonkeyLearn
+import requests
+import json
 
 class InfoExtractor:
 
-    def __init__(self):
-        self.properties = {'openie.affinity_probability_cap': 2 / 3, }
+    # def __init__(self):
+    #     self.properties = {'openie.affinity_probability_cap': 2 / 3, }
 
     def identify_placement(self, text: str):
     #        # sample call: self.identify_placement("a car below the bird")
@@ -17,10 +18,25 @@ class InfoExtractor:
     
     def extract_tuples(self, text: str) -> list:
         tuples = []
-        with StanfordOpenIE(properties=self.properties) as client:
-            for triple in client.annotate(text):
-                print('|-', triple)
-                triple["placement"] = self.identify_placement(text)
-                print('|-', triple)
-                tuples.append(str(triple).replace("\'","\""))
+
+        url = 'https://tranquil-garden-18140.herokuapp.com:9000/'
+        params = {'properties': '{"annotators": "tokenize,ssplit,pos,lemma,depparse,natlog,openie"}',
+                  'openie.affinity_probability_cap': 2 / 3, "openie.triple.strict": "true"}
+        # Get information about the sentence from CoreNLP
+        r = requests.post(url, data=text, params=params, timeout=60)
+        data = json.loads(r.text)
+        for sentence in data["sentences"]:
+            for triple in sentence["openie"]:
+                tokens = dict()
+                tokens["subject"] = triple["subject"]
+                tokens["relation"] = triple["relation"]
+                tokens["object"] = triple["object"]
+                tuples.append(tokens)
+        # data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+        # print(data)
+        # tuples.append(data)
+        # with StanfordOpenIE(properties=self.properties) as client:
+        #     for triple in client.annotate(text):
+        #         print('|-', triple)
+        #         tuples.append(str(triple))
         return tuples
