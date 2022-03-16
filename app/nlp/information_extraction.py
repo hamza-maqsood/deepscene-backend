@@ -18,9 +18,11 @@ class InfoExtractor:
         for sentence in data["sentences"]:
             for triple in sentence["openie"]:
                 tokens = dict()
-                tokens["subject"] = triple["subject"]
-                tokens["object"] = triple["object"]
+                tokens["sub"] = triple["subject"]
+                tokens["obj"] = triple["object"]
                 tokens["relation"] = triple["relation"]
+
+
                 tuples.append(tokens)
         # data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
         # print(data)

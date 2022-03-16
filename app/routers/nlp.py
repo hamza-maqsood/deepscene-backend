@@ -2,8 +2,9 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
 import nltk
+import json
 import speech_recognition as sr
-
+from pydantic import BaseModel
 from app.nlp.information_extraction import InfoExtractor
 
 
@@ -52,6 +53,9 @@ class TaggedSpeech(BaseModel):
     tokens: Optional[str]
     tags: Optional[str]
 
+class Text(BaseModel):
+    text: str
+
 
 # routes
 @router.post("/tag-speech", tags=["nlp"])
@@ -62,4 +66,23 @@ async def pos_tag(texts: InputSpeech):
 
 @router.get("/tuples/{text}", tags=["nlp"])
 async def info_extract(text: str):
+    print("ASDA")
     return info_extractor.extract_tuples(text=text)
+
+
+@router.get("/test-graph-structure", tags=["nlp"])
+async def test_graph():
+    return '{"objects": ["sky", "man", "leg", "horse", "tail", "leg","short", "hill", "hill"],"relationships": [[0, "above", 1],[1, "has", 2],[1, "riding", 3],[3, "has", 4],[3, "has", 4],[3, "has", 5]]}'
+
+
+class Data(BaseModel):
+    user: str
+
+@router.post("/save-example", tags=["nlp"])
+async def save_example(array: Text):
+    # print(type(array))
+    print(array.text)
+    array.text = array.text.replace("%22", '"')
+    # data = json.loads(array)
+    # print(data)
+    return array
