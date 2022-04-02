@@ -6,6 +6,9 @@
 .quickdrawcache
 __pycache__
 .pytest_cache
+word2vec-model.bin
+include
+lib
 htmlcov
 dist
 site

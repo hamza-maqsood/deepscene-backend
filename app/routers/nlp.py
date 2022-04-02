@@ -1,3 +1,6 @@
+Masti
+
+
 from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -40,6 +43,17 @@ class NLPEngine:
                 print("Sorry, I did not get that")
 
 
+    '''
+    get a word2vec of a word
+    testing using a pretrained model, can use our own as well
+    '''
+    def word2vecTest(self, word_to_check):
+        from gensim.models import KeyedVectors
+        model = KeyedVectors.load_word2vec_format('word2vec-model.bin', binary=True)
+        return model[str(word_to_check)]
+
+
+
 router = APIRouter()
 nlp_engine = NLPEngine()
 info_extractor = InfoExtractor()
@@ -73,6 +87,14 @@ async def info_extract(text: str):
 @router.get("/test-graph-structure", tags=["nlp"])
 async def test_graph():
     return '{"objects": ["sky", "man", "leg", "horse", "tail", "leg","short", "hill", "hill"],"relationships": [[0, "above", 1],[1, "has", 2],[1, "riding", 3],[3, "has", 4],[3, "has", 4],[3, "has", 5]]}'
+
+
+@router.get("/test-word2vec", tags=["nlp"])
+async def test_word2vec(word_to_convert: str):
+    return nlp_engine.word2vecTest(word_to_check=word_to_convert)
+
+
+
 
 
 class Data(BaseModel):
