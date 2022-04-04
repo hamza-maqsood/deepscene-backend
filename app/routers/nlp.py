@@ -5,8 +5,8 @@ import nltk
 import json
 import speech_recognition as sr
 from pydantic import BaseModel
-from app.nlp.information_extraction import InfoExtractor
 
+from app.nlp.information_extraction import InfoExtractor
 
 class NLPEngine:
 
@@ -38,6 +38,17 @@ class NLPEngine:
                 print("Text: " + r.recognize_google(audio_text))
             except:
                 print("Sorry, I did not get that")
+
+
+    '''
+    get a word2vec of a word
+    testing using a pretrained model, can use our own as well
+    '''
+    def word2vecTest(self):
+        print("converting word to vector...")
+        from app.main import model
+        return str(model['cat'])
+
 
 
 router = APIRouter()
@@ -73,6 +84,14 @@ async def info_extract(text: str):
 @router.get("/test-graph-structure", tags=["nlp"])
 async def test_graph():
     return '{"objects": ["sky", "man", "leg", "horse", "tail", "leg","short", "hill", "hill"],"relationships": [[0, "above", 1],[1, "has", 2],[1, "riding", 3],[3, "has", 4],[3, "has", 4],[3, "has", 5]]}'
+
+
+@router.get("/test-word2vec", tags=["nlp"])
+async def test_word2vec(word_to_convert: str):
+    return nlp_engine.word2vecTest()
+
+
+
 
 
 class Data(BaseModel):
