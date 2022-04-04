@@ -1,6 +1,3 @@
-Masti
-
-
 from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -8,8 +5,8 @@ import nltk
 import json
 import speech_recognition as sr
 from pydantic import BaseModel
-from app.nlp.information_extraction import InfoExtractor
 
+from app.nlp.information_extraction import InfoExtractor
 
 class NLPEngine:
 
@@ -47,10 +44,10 @@ class NLPEngine:
     get a word2vec of a word
     testing using a pretrained model, can use our own as well
     '''
-    def word2vecTest(self, word_to_check):
-        from gensim.models import KeyedVectors
-        model = KeyedVectors.load_word2vec_format('word2vec-model.bin', binary=True)
-        return model[str(word_to_check)]
+    def word2vecTest(self):
+        print("converting word to vector...")
+        from app.main import model
+        return str(model['cat'])
 
 
 
@@ -91,7 +88,7 @@ async def test_graph():
 
 @router.get("/test-word2vec", tags=["nlp"])
 async def test_word2vec(word_to_convert: str):
-    return nlp_engine.word2vecTest(word_to_check=word_to_convert)
+    return nlp_engine.word2vecTest()
 
 
 

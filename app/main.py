@@ -45,6 +45,8 @@ app.include_router(common_sense.router)
 app.include_router(entity.router)
 app.include_router(nlp.router)
 
+from gensim.models import KeyedVectors
+model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
 
 @app.get("/", tags=["root"])
 async def root() -> dict:
