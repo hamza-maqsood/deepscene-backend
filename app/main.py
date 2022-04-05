@@ -3,6 +3,7 @@ from fastapi import FastAPI
 import app.routers.common_sense as common_sense
 import app.routers.entity as entity
 import app.routers.nlp as nlp
+import json
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -47,6 +48,16 @@ app.include_router(nlp.router)
 
 from gensim.models import KeyedVectors
 model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
+
+with open("./app/resources/dataset.json", "r") as dataset:
+    global json_store
+    json_store = json.load(dataset)
+    dataset.close()
+
+
+
+
+
 
 @app.get("/", tags=["root"])
 async def root() -> dict:

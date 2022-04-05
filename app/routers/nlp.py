@@ -1,6 +1,11 @@
+DIRECTION_CLASSES = 6
+DISTANCE_CLASSES = 3
+
+import copy
 from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
+import numpy as np
 import nltk
 import json
 import speech_recognition as sr
@@ -8,11 +13,17 @@ from pydantic import BaseModel
 
 from app.nlp.information_extraction import InfoExtractor
 
+# with open("./app/resources/dataset.json", "w") as dataset_write:
+#     global json_store_file
+#     json_store_file = dataset_write
+
 class NLPEngine:
 
     def __init__(self):
         nltk.download('punkt')
         nltk.download('averaged_perceptron_tagger')
+
+
 
     def generate_pos_tags(self, text: str):
         to_return = TaggedSpeech()
@@ -47,7 +58,7 @@ class NLPEngine:
     def word2vecTest(self):
         print("converting word to vector...")
         from app.main import model
-        return str(model['cat'])
+        return str(len(model['cat']))
 
 
 
@@ -99,9 +110,56 @@ class Data(BaseModel):
 
 @router.post("/save-example", tags=["nlp"])
 async def save_example(array: Text):
-    # print(type(array))
+    from app.main import model
+    from app.main import json_store
+
     print(array.text)
     array.text = array.text.replace("%22", '"')
-    # data = json.loads(array)
-    # print(data)
-    return array
+
+    data = json.loads(array.text)
+    node_words = set()
+    for relation in data['array']:
+        node_words.add(relation['sub'])
+        node_words.add(relation['obj'])
+
+    word_embedding_size = 300
+    node_words = list(node_words)
+    node_features = np.empty((len(node_words), word_embedding_size), dtype=float)
+    edge_words = []
+    edge_features = np.empty((len(data['array']), word_embedding_size), dtype=float)
+    edge_direction_truths = np.zeros((len(data['array']), DIRECTION_CLASSES), dtype=float)
+    edge_distance_truths = np.zeros((len(data['array']), DISTANCE_CLASSES), dtype=float)
+    edges_u = []
+    edges_v = []
+    for relation in data['array']:
+        sub_index = node_words.index(relation['sub'])
+        obj_index = node_words.index(relation['obj'])
+
+        node_features[sub_index] = model[node_words[sub_index]].tolist()
+        node_features[obj_index] = model[node_words[obj_index]].tolist()
+
+        edges_u.append(sub_index)
+        edges_v.append(obj_index)
+
+        edge_words.append(relation['relation'])
+
+        edge_direction_truths[len(edge_words)-1][relation['direction']] = 1
+        edge_distance_truths[len(edge_words)-1][relation['distance']] = 1
+
+        for words in edge_words:
+            embedding = None
+            for word in words.split():
+                if embedding is None:
+                    embedding = np.array(model[word])
+                else:
+                    embedding += np.array(model[word])
+            edge_features[len(edge_words)-1] = embedding.tolist()
+
+    example = {'node_words': node_words, 'node_features': node_features.tolist(), 'edge_features': edge_features.tolist(),
+               'edges_u': edges_u, 'edges_v': edges_v, 'edge_direction_truths': edge_direction_truths.tolist(),
+               'edge_distance_truths': edge_distance_truths.tolist()}
+
+    json_store['array'].append(example)
+    with open("./app/resources/dataset.json", "w") as dataset_write:
+        json.dump(json_store, dataset_write)
+    return json.dumps(json_store)
