@@ -24,7 +24,6 @@ class NLPEngine:
         nltk.download('averaged_perceptron_tagger')
 
 
-
     def generate_pos_tags(self, text: str):
         to_return = TaggedSpeech()
         # tokenize the sentence
@@ -61,7 +60,6 @@ class NLPEngine:
         return str(len(model['cat']))
 
 
-
 router = APIRouter()
 nlp_engine = NLPEngine()
 info_extractor = InfoExtractor()
@@ -70,13 +68,15 @@ info_extractor = InfoExtractor()
 class InputSpeech(BaseModel):
     text: str
 
-
 class TaggedSpeech(BaseModel):
     tokens: Optional[str]
     tags: Optional[str]
 
 class Text(BaseModel):
     text: str
+
+class Data(BaseModel):
+    user: str
 
 
 # routes
@@ -101,12 +101,6 @@ async def test_graph():
 async def test_word2vec(word_to_convert: str):
     return nlp_engine.word2vecTest()
 
-
-
-
-
-class Data(BaseModel):
-    user: str
 
 @router.post("/save-example", tags=["nlp"])
 async def save_example(array: Text):
@@ -163,3 +157,9 @@ async def save_example(array: Text):
     with open("./app/resources/dataset.json", "w") as dataset_write:
         json.dump(json_store, dataset_write)
     return json.dumps(json_store)
+
+
+@router.post("/reevaluate-model", tags=["nlp"])
+async def reevaluate_model(newClass: int):
+    print("new class is:", int)
+
