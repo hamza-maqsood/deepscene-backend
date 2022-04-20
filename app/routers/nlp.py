@@ -17,6 +17,10 @@ from app.nlp.information_extraction import InfoExtractor
 #     global json_store_file
 #     json_store_file = dataset_write
 
+
+base_animate_words_file = open("./app/resources.base_animate_words", "r")
+base_animate_words = [word for line in base_animate_words_file for word in line.split()]
+
 class NLPEngine:
 
     def __init__(self):
@@ -111,55 +115,78 @@ async def save_example(array: Text):
     array.text = array.text.replace("%22", '"')
 
     data = json.loads(array.text)
-    node_words = set()
-    for relation in data['array']:
-        node_words.add(relation['sub'])
-        node_words.add(relation['obj'])
+    # node_words = set()
+    # for relation in data['array']:
+    #     node_words.add(relation['sub'])
+    #     node_words.add(relation['obj'])
+    #
+    # word_embedding_size = 300
+    # node_words = list(node_words)
+    # node_features = np.empty((len(node_words), word_embedding_size), dtype=float)
+    # edge_words = []
+    # edge_features = np.empty((len(data['array']), word_embedding_size), dtype=float)
+    # edge_direction_truths = np.zeros((len(data['array']), DIRECTION_CLASSES), dtype=float)
+    # edge_distance_truths = np.zeros((len(data['array']), DISTANCE_CLASSES), dtype=float)
+    # edges_u = []
+    # edges_v = []
+    # for relation in data['array']:
+    #     sub_index = node_words.index(relation['sub'])
+    #     obj_index = node_words.index(relation['obj'])
+    #
+    #     node_features[sub_index] = model[node_words[sub_index]].tolist()
+    #     node_features[obj_index] = model[node_words[obj_index]].tolist()
+    #
+    #     edges_u.append(sub_index)
+    #     edges_v.append(obj_index)
+    #
+    #     edge_words.append(relation['relation'])
+    #
+    #     edge_direction_truths[len(edge_words)-1][relation['directionTruth']] = 1
+    #     edge_distance_truths[len(edge_words)-1][relation['distanceTruth']] = 1
+    #
+    #     for words in edge_words:
+    #         embedding = None
+    #         for word in words.split():
+    #             if embedding is None:
+    #                 embedding = np.array(model[word])
+    #             else:
+    #                 embedding += np.array(model[word])
+    #         edge_features[len(edge_words)-1] = embedding.tolist()
+    #
+    # example = {'node_words': node_words, 'node_features': node_features.tolist(), 'edge_features': edge_features.tolist(),
+    #            'edges_u': edges_u, 'edges_v': edges_v, 'edge_direction_truths': edge_direction_truths.tolist(),
+    #            'edge_distance_truths': edge_distance_truths.tolist()}
+    #
+    # json_store['array'].append(example)
+    # with open("./app/resources/dataset.json", "w") as dataset_write:
+    #     json.dump(json_store, dataset_write)
+    return json.dumps(data)
 
-    word_embedding_size = 300
-    node_words = list(node_words)
-    node_features = np.empty((len(node_words), word_embedding_size), dtype=float)
-    edge_words = []
-    edge_features = np.empty((len(data['array']), word_embedding_size), dtype=float)
-    edge_direction_truths = np.zeros((len(data['array']), DIRECTION_CLASSES), dtype=float)
-    edge_distance_truths = np.zeros((len(data['array']), DISTANCE_CLASSES), dtype=float)
-    edges_u = []
-    edges_v = []
-    for relation in data['array']:
-        sub_index = node_words.index(relation['sub'])
-        obj_index = node_words.index(relation['obj'])
 
-        node_features[sub_index] = model[node_words[sub_index]].tolist()
-        node_features[obj_index] = model[node_words[obj_index]].tolist()
+def predict_animations(graph):
+    from app.main import model
 
-        edges_u.append(sub_index)
-        edges_v.append(obj_index)
+    skip = False
+    for m_tuple in graph['array']:
+        for t_word in m_tuple['relation'].split():
+            if skip:
+                break
+            for b_word in base_animate_words:
+                if model.similarity(t_word, b_word) > 0.8:
+                    m_tuple['animate'] = True
+                    skip = True
+                    break
 
-        edge_words.append(relation['relation'])
 
-        edge_direction_truths[len(edge_words)-1][relation['direction']] = 1
-        edge_distance_truths[len(edge_words)-1][relation['distance']] = 1
-
-        for words in edge_words:
-            embedding = None
-            for word in words.split():
-                if embedding is None:
-                    embedding = np.array(model[word])
-                else:
-                    embedding += np.array(model[word])
-            edge_features[len(edge_words)-1] = embedding.tolist()
-
-    example = {'node_words': node_words, 'node_features': node_features.tolist(), 'edge_features': edge_features.tolist(),
-               'edges_u': edges_u, 'edges_v': edges_v, 'edge_direction_truths': edge_direction_truths.tolist(),
-               'edge_distance_truths': edge_distance_truths.tolist()}
-
-    json_store['array'].append(example)
-    with open("./app/resources/dataset.json", "w") as dataset_write:
-        json.dump(json_store, dataset_write)
-    return json.dumps(json_store)
 
 
 @router.post("/reevaluate-model", tags=["nlp"])
-async def reevaluate_model(newClass: int):
+async def reevaluate_model(graph: Text):
+    graph.text = graph.text.replace("%22", '"')
+
+    data = json.loads(graph.text)
+
+    data['']
+
     print("new class is:", int)
 
