@@ -2,6 +2,8 @@ DIRECTION_CLASSES = 6
 DISTANCE_CLASSES = 3
 
 import copy
+from distutils.log import info
+from msilib.schema import Class
 from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -12,13 +14,15 @@ import speech_recognition as sr
 from pydantic import BaseModel
 
 from app.nlp.information_extraction import InfoExtractor
+# from app.main import distance_model
+# from app.main import direction_model
 
 # with open("./app/resources/dataset.json", "w") as dataset_write:
 #     global json_store_file
 #     json_store_file = dataset_write
 
 
-base_animate_words_file = open("./app/resources.base_animate_words", "r")
+base_animate_words_file = open("./app/resources/base_animate_words", "r")
 base_animate_words = [word for line in base_animate_words_file for word in line.split()]
 
 class NLPEngine:
@@ -190,3 +194,29 @@ async def reevaluate_model(graph: Text):
 
     print("new class is:", int)
 
+
+@router.post("/predict", tags=["nlp"])
+async def predict(graph: Text):
+    # convert to tuples
+    tuples = info_extract(graph.text)
+    
+    # convert to json structure
+    json_graph = info_extractor.sentenceToGraphData(tuples)
+
+    # convert to dgl graph
+
+
+    # predict using saved models (distance, direction)
+    # return predictions
+
+
+class SceneData:
+    
+    def __init__(self, nw, nf, ew, ef, eu, ev):
+        self.node_words = nw
+        self.node_features = nf
+        self.edge_words = ew
+        self.edge_features = ef
+        self.edges_u = eu
+        self.edges_v = ev
+    

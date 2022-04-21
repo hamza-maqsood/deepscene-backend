@@ -4,9 +4,12 @@ import app.routers.common_sense as common_sense
 import app.routers.entity as entity
 import app.routers.nlp as nlp
 import json
+import torch
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+# from model.SceneGCN import DirectionModel
+# from model.SceneGCN import DistanceModel
 
 """
 
@@ -47,16 +50,20 @@ app.include_router(entity.router)
 app.include_router(nlp.router)
 
 from gensim.models import KeyedVectors
-model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
+# model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
+
+# save_base_path = './app/resources/'
+# distance_model = DistanceModel()
+# distance_model.load_state_dict(torch.load(save_base_path + 'distance_model.pt'))
+
+# direction_model = DirectionModel()
+# direction_model.load_state_dict(torch.load(save_base_path + 'direction_model.pt'))
+
 
 with open("./app/resources/dataset.json", "r") as dataset:
     global json_store
     json_store = json.load(dataset)
     dataset.close()
-
-
-
-
 
 
 @app.get("/", tags=["root"])
