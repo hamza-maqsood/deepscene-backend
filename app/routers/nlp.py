@@ -201,22 +201,19 @@ async def predict(graph: Text):
     tuples = info_extract(graph.text)
     
     # convert to json structure
-    json_graph = info_extractor.sentenceToGraphData(tuples)
+    scene_data = info_extractor.sentenceToGraphData(tuples)
 
     # convert to dgl graph
-
-
+    # predict using the model function of predcition
     # predict using saved models (distance, direction)
+
+    # make graph
+    graph = dgl.graph((scene_data.edges_u, scene_data.edges_v))
+
+    # get node feats
+    dir_pred = direction_model(graph, scene_data.node_features)
+    dist_pred = distance_model(graph, scene_data.node_features)
+
     # return predictions
+    return dir_pred, dist_pred
 
-
-class SceneData:
-    
-    def __init__(self, nw, nf, ew, ef, eu, ev):
-        self.node_words = nw
-        self.node_features = nf
-        self.edge_words = ew
-        self.edge_features = ef
-        self.edges_u = eu
-        self.edges_v = ev
-    
