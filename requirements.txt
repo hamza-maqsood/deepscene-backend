@@ -12,7 +12,12 @@ requests==2.27.1
 scipy==1.8.0
 smart-open==5.2.1
 sniffio==1.2.0
-starlette==0.16.0
+starlette==0.17.1
 tqdm==4.63.0
 typing-extensions==4.1.1
 urllib3==1.26.9
+
+fastapi~=0.75.2
+nltk~=3.7
+pydantic~=1.9.0
+quickdraw~=0.2.0

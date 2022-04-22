@@ -1,7 +1,9 @@
 # Contruct a two-layer GNN model
 import dgl.nn as dglnn
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 class SAGE(nn.Module):
     def __init__(self, in_feats, hid_feats, out_feats):
@@ -49,6 +51,7 @@ class DirectionModel(nn.Module):
         h = self.sage(g, x)
         return self.pred(g, h)
 
+    
 class DistanceModel(nn.Module):
     def __init__(self, in_features, hidden_features, out_features):
         super().__init__()
