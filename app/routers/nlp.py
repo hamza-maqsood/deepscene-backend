@@ -195,8 +195,8 @@ async def save_example(array: Text):
 
         edge_words.append(relation['relation'])
 
-        edge_direction_truths[len(edge_words) - 1][relation['directionTruth']] = 1
-        edge_distance_truths[len(edge_words) - 1][relation['distanceTruth']] = 1
+        edge_direction_truths[len(edge_words) - 1][relation['directionTruth'] - 1] = 1
+        edge_distance_truths[len(edge_words) - 1][relation['distanceTruth'] - 1] = 1
 
         for words in edge_words:
             embedding = None
