@@ -234,15 +234,9 @@ def predict_animations(graph):
 
 
 @router.post("/reevaluate-model", tags=["nlp"])
-async def reevaluate_model(graph: Text):
-    graph.text = graph.text.replace("%22", '"')
-
-    data = json.loads(graph.text)
-
-    data['']
-
-    print("new class is:", int)
-
+async def reevaluate_model():
+    train_models()
+    return "Done"
 
 """
 function to make predictions after training
