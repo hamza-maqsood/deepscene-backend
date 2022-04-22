@@ -38,35 +38,34 @@ def train_models():
     # Opening JSON file
     f = open('./app/resources/dataset.json')
     # returns JSON object as dict
-    scene_data = json.load(f)
-    scene_data = scene_data['array'][0]
-    graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
-    node_feats = torch.tensor(scene_data['node_features'])
-    num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
-
-    train_mask = torch.ones(num_edges, dtype=torch.bool)
-    direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
-
-    distance_edge_labels = torch.from_numpy(np.array(scene_data['edge_distance_truths']))
+    scene_data_array = json.load(f)
     direction_model = DirectionModel(300, 200, 6)
-    opt = torch.optim.Adam(direction_model.parameters())
-    for epoch in range(200):
-        pred = direction_model(graph, node_feats)
-        loss = ((pred[train_mask] - direction_edge_labels[train_mask]) ** 2).mean()
-        opt.zero_grad()
-        loss.backward()
-        opt.step()
-        print(loss.item())
-
     distance_model = DistanceModel(300, 200, 3)
-    opt = torch.optim.Adam(direction_model.parameters())
-    for epoch in range(200):
-        pred = distance_model(graph, node_feats)
-        loss = ((pred[train_mask] - distance_edge_labels[train_mask]) ** 2).mean()
-        opt.zero_grad()
-        loss.backward()
-        opt.step()
-        print(loss.item())
+    for scene_data in scene_data_array:
+        graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
+        node_feats = torch.tensor(scene_data['node_features'])
+        num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
+
+        train_mask = torch.ones(num_edges, dtype=torch.bool)
+        direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
+
+        distance_edge_labels = torch.from_numpy(np.array(scene_data['edge_distance_truths']))
+        opt = torch.optim.Adam(direction_model.parameters())
+        for epoch in range(200):
+            pred = direction_model(graph, node_feats)
+            loss = ((pred[train_mask] - direction_edge_labels[train_mask]) ** 2).mean()
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            print(loss.item())
+        opt = torch.optim.Adam(direction_model.parameters())
+        for epoch in range(200):
+            pred = distance_model(graph, node_feats)
+            loss = ((pred[train_mask] - distance_edge_labels[train_mask]) ** 2).mean()
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            print(loss.item())
 
     return distance_model, direction_model
 
