@@ -1,7 +1,6 @@
 import numpy as np
 import requests
 import json
-# from app.main import model
 
 from gensim.models import KeyedVectors
 model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
@@ -23,9 +22,9 @@ class InfoExtractor:
         for sentence in data["sentences"]:
             for triple in sentence["openie"]:
                 tokens = dict()
-                tokens["sub"] = triple["subject"]
-                tokens["obj"] = triple["object"]
-                tokens["relation"] = triple["relation"]
+                tokens['sub'] = triple['subject']
+                tokens["obj"] = triple['object']
+                tokens['relation'] = triple['relation']
 
                 tuples.append(tokens)
         return json.dumps({"array": tuples})
@@ -63,9 +62,9 @@ class InfoExtractor:
             for words in edge_words:
                 embedding = None
                 for word in words.split():
-                    if embedding is None:
+                    if embedding is None and model.__contains__(word):
                         embedding = np.array(model[word])
-                    else:
+                    elif model.__contains__(word):
                         embedding += np.array(model[word])
                 edge_features[len(edge_words) - 1] = embedding.tolist()
 

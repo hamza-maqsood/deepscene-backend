@@ -28,12 +28,25 @@ import json
 
 base_animate_words_file = open("./app/resources/base_animate_words", "r")
 base_animate_words = [word for line in base_animate_words_file for word in line.split()]
+distance_model = None
+direction_model = None
+
 
 from gensim.models import KeyedVectors
 
 model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
 
+def load_models():
 
+    return torch.load("./app/resources/deepscene_models/distance_model.pt"), \
+           torch.load("./app/resources/deepscene_models/direction_model.pt")
+
+def save_models():
+
+    torch.save(distance_model, "./app/resources/deepscene_models/distance_model.pt")
+    torch.save(direction_model, "./app/resources/deepscene_models/direction_model.pt")
+
+#
 def train_models():
     # Opening JSON file
     f = open('./app/resources/dataset.json')
@@ -41,11 +54,11 @@ def train_models():
     scene_data_array = json.load(f)
     direction_model = DirectionModel(300, 200, 6)
     distance_model = DistanceModel(300, 200, 3)
-    for scene_data in scene_data_array:
+    for scene_data in scene_data_array['array']:
         graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
         node_feats = torch.tensor(scene_data['node_features'])
         num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
-
+# sss
         train_mask = torch.ones(num_edges, dtype=torch.bool)
         direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
 
@@ -66,11 +79,12 @@ def train_models():
             loss.backward()
             opt.step()
             print(loss.item())
+    save_models()
+    #return distance_model, direction_model
 
-    return distance_model, direction_model
 
+distance_model, direction_model = load_models()
 
-distance_model, direction_model = train_models()
 
 
 class NLPEngine:
@@ -136,14 +150,18 @@ class Text(BaseModel):
 class Data(BaseModel):
     user: str
 
-
+"""
+using nltk, generates pos tags from the sentences
+"""
 # routes
 @router.post("/tag-speech", tags=["nlp"])
 async def pos_tag(texts: InputSpeech):
     tags = nlp_engine.generate_pos_tags(text=texts.text)
     return tags
 
-
+"""
+extracts tuples from the text using openNLP
+"""
 @router.get("/tuples/{text}", tags=["nlp"])
 async def info_extract(text: str):
     return info_extractor.extract_tuples(text=text)
@@ -153,12 +171,16 @@ async def info_extract(text: str):
 async def test_graph():
     return '{"objects": ["sky", "man", "leg", "horse", "tail", "leg","short", "hill", "hill"],"relationships": [[0, "above", 1],[1, "has", 2],[1, "riding", 3],[3, "has", 4],[3, "has", 4],[3, "has", 5]]}'
 
-
+"""
+converts into word2vec
+"""
 @router.get("/test-word2vec", tags=["nlp"])
 async def test_word2vec(word_to_convert: str):
     return nlp_engine.word2vecTest()
 
-
+"""
+for the purposes of reevluation, we need to add in new data using this endpoint
+"""
 @router.post("/save-example", tags=["nlp"])
 async def save_example(array: Text):
     from app.main import model
@@ -168,8 +190,9 @@ async def save_example(array: Text):
     array.text = array.text.replace("%22", '"')
 
     data = json.loads(array.text)
+    print(data)
     node_words = set()
-    for relation in data['array']:
+    for relation in data:
         node_words.add(relation['sub'])
         node_words.add(relation['obj'])
 
@@ -177,12 +200,12 @@ async def save_example(array: Text):
     node_words = list(node_words)
     node_features = np.empty((len(node_words), word_embedding_size), dtype=float)
     edge_words = []
-    edge_features = np.empty((len(data['array']), word_embedding_size), dtype=float)
-    edge_direction_truths = np.zeros((len(data['array']), DIRECTION_CLASSES), dtype=float)
-    edge_distance_truths = np.zeros((len(data['array']), DISTANCE_CLASSES), dtype=float)
+    edge_features = np.empty((len(data), word_embedding_size), dtype=float)
+    edge_direction_truths = np.zeros((len(data), DIRECTION_CLASSES), dtype=float)
+    edge_distance_truths = np.zeros((len(data), DISTANCE_CLASSES), dtype=float)
     edges_u = []
     edges_v = []
-    for relation in data['array']:
+    for relation in data:
         sub_index = node_words.index(relation['sub'])
         obj_index = node_words.index(relation['obj'])
 
@@ -217,6 +240,9 @@ async def save_example(array: Text):
     return json.dumps(data)
 
 
+"""
+method for predicting animation
+"""
 def predict_animations(graph):
     from app.main import model
 
@@ -242,10 +268,10 @@ function to make predictions after training
 """
 
 
-def predict_results(graph, node_features, tuple):
-    print(tuple)
-    tuple = json.loads(tuple)
-    tuple = tuple["array"][0]
+def predict_results(graph, node_features, graph_tuples):
+    print(graph_tuples)
+    graph_tuples = json.loads(graph_tuples)
+    graph_tuples = graph_tuples["array"]
     distance_tensors = distance_model(graph, torch.from_numpy(node_features.astype(np.float32)))
     direction_tensors = direction_model(graph, torch.from_numpy(node_features.astype(np.float32)))
     distance_predictions = []
@@ -272,16 +298,18 @@ def predict_results(graph, node_features, tuple):
     for value in predict_dir_out:
         dir_final.append(value.tolist().index(1.0) + 1)
     array = []
-    animate = False
-    for b_word in base_animate_words:
-        if model.similarity(tuple["relation"], b_word) > 0.8:
-            animate = True
-    for distance_pred, direction_pred in zip(dis_final, dir_final):
-        array.append({"sub": tuple["sub"], "obj": tuple["obj"], "relation": tuple["relation"],
+    for _tuple in graph_tuples:
+        _tuple['animate'] = False
+        for word in _tuple['relation'].split():
+            for b_word in base_animate_words:
+                if model.__contains__(word) and model.similarity(word, b_word) > 0.8:
+                    _tuple['animate'] = True
+    for distance_pred, direction_pred, _tuple in zip(dis_final, dir_final, graph_tuples):
+        array.append({"sub": _tuple["sub"], "obj": _tuple["obj"], "relation": _tuple["relation"],
                       "distancePrediction": distance_pred,
-                      "directionPrediction": direction_pred, "animate": animate})
+                      "directionPrediction": direction_pred, "animate": _tuple['animate']})
     response = {"array": array}
-    return json.dumps(response)
+    return json.dumps(array)
 
 
 # class Item(BaseModel):
