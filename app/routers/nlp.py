@@ -28,23 +28,33 @@ import json
 
 base_animate_words_file = open("./app/resources/base_animate_words", "r")
 base_animate_words = [word for line in base_animate_words_file for word in line.split()]
-distance_model = None
-direction_model = None
-
+global distance_model
+global direction_model
 
 from gensim.models import KeyedVectors
 
 model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
 
+
 def load_models():
 
-    return torch.load("./app/resources/deepscene_models/distance_model.pt"), \
-           torch.load("./app/resources/deepscene_models/direction_model.pt")
+    dis_model = DistanceModel(300, 200, 3)
+    dir_model = DirectionModel(300, 200, 6)
+
+    dis_model.load_state_dict(torch.load("./app/resources/deepscene_models/distance_model.pt"))
+    dir_model.load_state_dict(torch.load("./app/resources/deepscene_models/direction_model.pt"))
+
+    dis_model.eval()
+    dir_model.eval()
+    return dis_model, dir_model
+    # return torch.load("./app/resources/deepscene_models/distance_model.pt"), \
+    #        torch.load("./app/resources/deepscene_models/direction_model.pt")
+
 
 def save_models():
-
-    torch.save(distance_model, "./app/resources/deepscene_models/distance_model.pt")
-    torch.save(direction_model, "./app/resources/deepscene_models/direction_model.pt")
+    # torch.save(dis_model.state_dict(), "./app/resources/deepscene_models/distance_model.pt")
+    # torch.save(dir_model.state_dict(), "./app/resources/deepscene_models/direction_model.pt")
+    pass
 
 #
 def train_models():
@@ -52,39 +62,41 @@ def train_models():
     f = open('./app/resources/dataset.json')
     # returns JSON object as dict
     scene_data_array = json.load(f)
-    direction_model = DirectionModel(300, 200, 6)
-    distance_model = DistanceModel(300, 200, 3)
+    dir_model = DirectionModel(300, 200, 6)
+    dis_model = DistanceModel(300, 200, 3)
     for scene_data in scene_data_array['array']:
         graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
         node_feats = torch.tensor(scene_data['node_features'])
         num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
-# sss
+        # sss
         train_mask = torch.ones(num_edges, dtype=torch.bool)
         direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
 
         distance_edge_labels = torch.from_numpy(np.array(scene_data['edge_distance_truths']))
-        opt = torch.optim.Adam(direction_model.parameters())
+        opt = torch.optim.Adam(dir_model.parameters())
         for epoch in range(200):
-            pred = direction_model(graph, node_feats)
+            pred = dir_model(graph, node_feats)
             loss = ((pred[train_mask] - direction_edge_labels[train_mask]) ** 2).mean()
             opt.zero_grad()
             loss.backward()
             opt.step()
             print(loss.item())
-        opt = torch.optim.Adam(direction_model.parameters())
+        opt = torch.optim.Adam(dir_model.parameters())
         for epoch in range(200):
-            pred = distance_model(graph, node_feats)
+            pred = dis_model(graph, node_feats)
             loss = ((pred[train_mask] - distance_edge_labels[train_mask]) ** 2).mean()
             opt.zero_grad()
             loss.backward()
             opt.step()
             print(loss.item())
-    save_models()
-    #return distance_model, direction_model
+    torch.save(dis_model.state_dict(), "./app/resources/deepscene_models/distance_model.pt")
+    torch.save(dir_model.state_dict(), "./app/resources/deepscene_models/direction_model.pt")
+    # return distance_model, direction_model
 
 
+train_models()
 distance_model, direction_model = load_models()
-
+print(distance_model, direction_model)
 
 
 class NLPEngine:
@@ -150,18 +162,24 @@ class Text(BaseModel):
 class Data(BaseModel):
     user: str
 
+
 """
 using nltk, generates pos tags from the sentences
 """
+
+
 # routes
 @router.post("/tag-speech", tags=["nlp"])
 async def pos_tag(texts: InputSpeech):
     tags = nlp_engine.generate_pos_tags(text=texts.text)
     return tags
 
+
 """
 extracts tuples from the text using openNLP
 """
+
+
 @router.get("/tuples/{text}", tags=["nlp"])
 async def info_extract(text: str):
     return info_extractor.extract_tuples(text=text)
@@ -171,16 +189,22 @@ async def info_extract(text: str):
 async def test_graph():
     return '{"objects": ["sky", "man", "leg", "horse", "tail", "leg","short", "hill", "hill"],"relationships": [[0, "above", 1],[1, "has", 2],[1, "riding", 3],[3, "has", 4],[3, "has", 4],[3, "has", 5]]}'
 
+
 """
 converts into word2vec
 """
+
+
 @router.get("/test-word2vec", tags=["nlp"])
 async def test_word2vec(word_to_convert: str):
     return nlp_engine.word2vecTest()
 
+
 """
 for the purposes of reevluation, we need to add in new data using this endpoint
 """
+
+
 @router.post("/save-example", tags=["nlp"])
 async def save_example(array: Text):
     from app.main import model
@@ -235,7 +259,8 @@ async def save_example(array: Text):
                'edge_distance_truths': edge_distance_truths.tolist()}
 
     json_store['array'].append(example)
-    with open("./app/resources/dataset.json", "w") as dataset_write:
+    # with open("./app/resources/dataset.json", "w") as dataset_write:
+    with open("./app/resources/mannan.json", "w") as dataset_write:
         json.dump(json_store, dataset_write)
     return json.dumps(data)
 
@@ -243,6 +268,8 @@ async def save_example(array: Text):
 """
 method for predicting animation
 """
+
+
 def predict_animations(graph):
     from app.main import model
 
@@ -262,6 +289,7 @@ def predict_animations(graph):
 async def reevaluate_model():
     train_models()
     return "Done"
+
 
 """
 function to make predictions after training
@@ -283,6 +311,8 @@ def predict_results(graph, node_features, graph_tuples):
         probs = F.softmax(tensor, dim=0)
         direction_predictions.append(probs.tolist())
 
+    print(distance_predictions)
+    print(direction_predictions)
     predict_dis_out = distance_predictions * (
             distance_predictions >= np.sort(distance_predictions, axis=1)[:, [-1]]).astype(float)
     predict_dis_out = predict_dis_out.astype(bool).astype(float)
@@ -322,7 +352,9 @@ def predict_results(graph, node_features, graph_tuples):
 
 @router.post("/predict", tags=["nlp"])
 async def predict(graph: Text):
+    print(graph.text)
     tuples = info_extractor.extract_tuples(text=graph.text)
+    print(tuples)
     node_words, node_features, edge_words, edge_features, edges_u, edges_v = info_extractor.sentenceToGraphData(tuples)
     graph = dgl.graph((edges_u, edges_v))
     return predict_results(graph, node_features, tuples)
