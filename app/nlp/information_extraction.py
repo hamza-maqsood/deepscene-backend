@@ -14,18 +14,25 @@ class InfoExtractor:
     def extract_tuples(self, text: str) -> str:
         tuples = []
         url = 'http://localhost:9000/'
-        params = {'properties': '{"annotators": "tokenize,ssplit,pos,lemma,depparse,natlog,openie"}',
+        params = {'properties': '{"annotators": "tokenize,ssplit,pos,lemma,depparse,natlog,openie", "splitter.disable" : "true",   "openie.max_entailments_per_clause": "1"}',
                   'openie.affinity_probability_cap': 2 / 3, "openie.triple.strict": "true"}
+        # a rabbit is under a house. a panda is far away from the house. a tree is next to the panda
         # Get information about the sentence from CoreNLP
         r = requests.post(url, data=text, params=params, timeout=60)
+        print(r.text)
         data = json.loads(r.text)
         for sentence in data["sentences"]:
+            print(sentence.keys())
             for triple in sentence["openie"]:
+                print(triple['subjectSpan'])
+                print(triple['objectSpan'])
+                print(triple['relationSpan'])
                 tokens = dict()
                 tokens['sub'] = triple['subject']
                 tokens["obj"] = triple['object']
                 tokens['relation'] = triple['relation']
 
+                print(tokens)
                 tuples.append(tokens)
         return json.dumps({"array": tuples})
 

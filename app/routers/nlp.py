@@ -94,7 +94,7 @@ def train_models():
     # return distance_model, direction_model
 
 
-train_models()
+# train_models()
 distance_model, direction_model = load_models()
 print(distance_model, direction_model)
 
@@ -259,6 +259,8 @@ async def save_example(array: Text):
                'edge_distance_truths': edge_distance_truths.tolist()}
 
     json_store['array'].append(example)
+
+    print(len(json_store['array']))
     # with open("./app/resources/dataset.json", "w") as dataset_write:
     with open("./app/resources/mannan.json", "w") as dataset_write:
         json.dump(json_store, dataset_write)
@@ -358,3 +360,10 @@ async def predict(graph: Text):
     node_words, node_features, edge_words, edge_features, edges_u, edges_v = info_extractor.sentenceToGraphData(tuples)
     graph = dgl.graph((edges_u, edges_v))
     return predict_results(graph, node_features, tuples)
+
+
+@router.get("/dataset-size")
+async def dataset_size():
+    from app.main import json_store
+
+    return len(json_store["array"])

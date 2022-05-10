@@ -59,9 +59,11 @@ model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', 
 # direction_model.load_state_dict(torch.load(save_base_path + 'direction_model.pt'))
 
 
-with open("./app/resources/dataset.json", "r") as dataset:
+# with open("./app/resources/dataset.json", "r") as dataset:
+with open("./app/resources/mannan.json", "r") as dataset:
     global json_store
     json_store = json.load(dataset)
+    print("dataset size: " + str(len(json_store['array'])))
     dataset.close()
 
 
