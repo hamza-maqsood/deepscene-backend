@@ -1,7 +1,9 @@
 import dgl
 import torch
 import torch.nn.functional as F
-from app.model.SceneGCN import DirectionModel, DistanceModel
+
+
+from app.model.SceneGCN import PlacementPredictor
 from typing import List
 from pydantic import BaseModel
 
@@ -38,11 +40,11 @@ model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', 
 
 def load_models():
 
-    dis_model = DistanceModel(300, 200, 3)
-    dir_model = DirectionModel(300, 200, 6)
+    dis_model = PlacementPredictor(300, 200, 3)
+    dir_model = PlacementPredictor(300, 200, 6)
 
-    dis_model.load_state_dict(torch.load("./app/resources/deepscene_models/distance_model.pt"))
-    dir_model.load_state_dict(torch.load("./app/resources/deepscene_models/direction_model.pt"))
+    dis_model.load_state_dict(torch.load("./app/resources/deepscene_models/distance_model_egat.pt"))
+    dir_model.load_state_dict(torch.load("./app/resources/deepscene_models/direction_model_egat.pt"))
 
     dis_model.eval()
     dir_model.eval()
@@ -57,44 +59,90 @@ def save_models():
     pass
 
 #
-def train_models():
+def train_models(file):
     # Opening JSON file
-    f = open('./app/resources/dataset.json')
+    f = open('./app/resources/' + file)
     # returns JSON object as dict
     scene_data_array = json.load(f)
-    dir_model = DirectionModel(300, 200, 6)
-    dis_model = DistanceModel(300, 200, 3)
-    for scene_data in scene_data_array['array']:
-        graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
-        node_feats = torch.tensor(scene_data['node_features'])
-        num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
-        # sss
-        train_mask = torch.ones(num_edges, dtype=torch.bool)
-        direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
+    dir_model = PlacementPredictor(300, 200, 6)
+    dis_model = PlacementPredictor(300, 200, 3)
 
-        distance_edge_labels = torch.from_numpy(np.array(scene_data['edge_distance_truths']))
-        opt = torch.optim.Adam(dir_model.parameters())
-        for epoch in range(200):
-            pred = dir_model(graph, node_feats)
-            loss = ((pred[train_mask] - direction_edge_labels[train_mask]) ** 2).mean()
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            print(loss.item())
-        opt = torch.optim.Adam(dir_model.parameters())
-        for epoch in range(200):
-            pred = dis_model(graph, node_feats)
-            loss = ((pred[train_mask] - distance_edge_labels[train_mask]) ** 2).mean()
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            print(loss.item())
-    torch.save(dis_model.state_dict(), "./app/resources/deepscene_models/distance_model.pt")
-    torch.save(dir_model.state_dict(), "./app/resources/deepscene_models/direction_model.pt")
+    c = 0
+    for scene_data in scene_data_array['array']:
+        # graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
+        # node_feats = torch.tensor(scene_data['node_features'])
+        # num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
+        # # sss
+        # train_mask = torch.ones(num_edges, dtype=torch.bool)
+        # direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
+        #
+        # distance_edge_labels = torch.from_numpy(np.array(scene_data['edge_distance_truths']))
+        # opt = torch.optim.Adam(dir_model.parameters())
+        # for epoch in range(200):
+        #     pred = dir_model(graph, node_feats)
+        #     loss = ((pred[train_mask] - direction_edge_labels[train_mask]) ** 2).mean()
+        #     opt.zero_grad()
+        #     loss.backward()
+        #     opt.step()
+        #     print(loss.item())
+        # opt = torch.optim.Adam(dir_model.parameters())
+        # for epoch in range(200):
+        #     pred = dis_model(graph, node_feats)
+        #     loss = ((pred[train_mask] - distance_edge_labels[train_mask]) ** 2).mean()
+        #     opt.zero_grad()
+        #     loss.backward()
+        #     opt.step()
+        #     print(loss.item())
+        graph = dgl.graph((scene_data['edges_u'], scene_data['edges_v']))
+        graph = dgl.add_self_loop(graph)
+        node_feats = torch.tensor(scene_data['node_features'])
+        edge_feats = torch.tensor(scene_data['edge_features'])
+        num_nodes, num_edges = len(scene_data['node_features']), len(scene_data['edge_features'])
+        train_mask = torch.ones(num_edges, dtype=torch.bool)
+        try:
+
+            direction_edge_labels = torch.from_numpy(np.array(scene_data['edge_direction_truths']))
+            opt = torch.optim.Adam(dir_model.parameters())
+            for epoch in range(200):
+                pred = dir_model(graph, node_feats, edge_feats)
+                pred = pred[:num_nodes - 1, :]
+                loss = ((pred[train_mask] - direction_edge_labels[train_mask]) ** 2).mean()
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+                print("Epoch: ", epoch, ", loss: ", loss.item())
+        except:
+            print("DIRECTION PROBLEM")
+            print("Current node words: ", scene_data['node_words'])
+            print("failed for some reason")
+
+        try:
+            distance_edge_labels = torch.from_numpy(np.array(scene_data['edge_distance_truths']))
+            opt = torch.optim.Adam(dir_model.parameters())
+            for epoch in range(200):
+                pred = dis_model(graph, node_feats, edge_feats)
+                pred = pred[:num_nodes - 1, :]
+                loss = ((pred[train_mask] - distance_edge_labels[train_mask]) ** 2).mean()
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
+                print("Epoch: ", epoch, ", loss: ", loss.item())
+        except:
+            print("DISTANCE PROBLEM")
+            print("Current node words: ", scene_data['node_words'])
+            print("failed for some reason")
+
+        c = c + 1
+        print(c)
+            # torch.save(dis_model.state_dict(), "./app/resources/deepscene_models/distance_model.pt")
+            # torch.save(dir_model.state_dict(), "./app/resources/deepscene_models/direction_model.pt")
+
+    torch.save(dis_model.state_dict(), "./app/resources/deepscene_models/distance_model_egat.pt")
+    torch.save(dir_model.state_dict(), "./app/resources/deepscene_models/direction_model_egat.pt")
     # return distance_model, direction_model
 
 
-# train_models()
+train_models("mannan.json")
 distance_model, direction_model = load_models()
 print(distance_model, direction_model)
 
@@ -262,7 +310,7 @@ async def save_example(array: Text):
 
     print(len(json_store['array']))
     # with open("./app/resources/dataset.json", "w") as dataset_write:
-    with open("./app/resources/mannan.json", "w") as dataset_write:
+    with open("./app/resources/hamza.json", "w") as dataset_write:
         json.dump(json_store, dataset_write)
     return json.dumps(data)
 
@@ -298,12 +346,19 @@ function to make predictions after training
 """
 
 
-def predict_results(graph, node_features, graph_tuples):
+def predict_results(graph, node_features, edge_features, graph_tuples):
     print(graph_tuples)
+
+    num_nodes = len(node_features)
     graph_tuples = json.loads(graph_tuples)
     graph_tuples = graph_tuples["array"]
-    distance_tensors = distance_model(graph, torch.from_numpy(node_features.astype(np.float32)))
-    direction_tensors = direction_model(graph, torch.from_numpy(node_features.astype(np.float32)))
+    # distance_tensors = distance_model(graph, torch.from_numpy(node_features.astype(np.float32)))
+    # direction_tensors = direction_model(graph, torch.from_numpy(node_features.astype(np.float32)))
+    direction_tensors = direction_model(graph, torch.from_numpy(node_features.astype(np.float32)), torch.from_numpy(edge_features.astype(np.float32)))
+    direction_tensors = direction_tensors[:num_nodes - 1, :]
+
+    distance_tensors = distance_model(graph, torch.from_numpy(node_features.astype(np.float32)), torch.from_numpy(edge_features.astype(np.float32)))
+    distance_tensors = distance_tensors[:num_nodes - 1, :]
     distance_predictions = []
     for tensor in distance_tensors:
         probs = F.softmax(tensor, dim=0)
@@ -359,7 +414,8 @@ async def predict(graph: Text):
     print(tuples)
     node_words, node_features, edge_words, edge_features, edges_u, edges_v = info_extractor.sentenceToGraphData(tuples)
     graph = dgl.graph((edges_u, edges_v))
-    return predict_results(graph, node_features, tuples)
+    graph = dgl.add_self_loop(graph)
+    return predict_results(graph, node_features, edge_features, tuples)
 
 
 @router.get("/dataset-size")
@@ -367,3 +423,10 @@ async def dataset_size():
     from app.main import json_store
 
     return len(json_store["array"])
+
+
+@router.get("/train")
+async def train(file: str):
+    train_models(file)
+
+    return 0
