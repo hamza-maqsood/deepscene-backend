@@ -142,7 +142,7 @@ def train_models(file):
     # return distance_model, direction_model
 
 
-train_models("mannan.json")
+# train_models("dataset.json")
 distance_model, direction_model = load_models()
 print(distance_model, direction_model)
 
@@ -301,7 +301,7 @@ async def save_example(array: Text):
                     embedding += np.array(model[word])
             edge_features[len(edge_words) - 1] = embedding.tolist()
 
-    example = {'node_words': node_words, 'node_features': node_features.tolist(),
+    example = {'node_words': node_words, 'edge_words': edge_words, 'node_features': node_features.tolist(),
                'edge_features': edge_features.tolist(),
                'edges_u': edges_u, 'edges_v': edges_v, 'edge_direction_truths': edge_direction_truths.tolist(),
                'edge_distance_truths': edge_distance_truths.tolist()}
@@ -310,7 +310,7 @@ async def save_example(array: Text):
 
     print(len(json_store['array']))
     # with open("./app/resources/dataset.json", "w") as dataset_write:
-    with open("./app/resources/hamza.json", "w") as dataset_write:
+    with open("./app/resources/dataset.json", "w") as dataset_write:
         json.dump(json_store, dataset_write)
     return json.dumps(data)
 

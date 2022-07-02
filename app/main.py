@@ -60,7 +60,7 @@ model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', 
 
 
 # with open("./app/resources/dataset.json", "r") as dataset:
-with open("./app/resources/hamza.json", "r") as dataset:
+with open("./app/resources/dataset.json", "r") as dataset:
     global json_store
     json_store = json.load(dataset)
     print("dataset size: " + str(len(json_store['array'])))
