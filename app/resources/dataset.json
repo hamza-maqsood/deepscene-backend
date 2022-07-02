@@ -1,3 +1,1 @@
-{
-  "array": []
-}
+{"array": [{"node_words": ["tree", "house"], "edge_words": ["is behind"], "edges_u": [1], "edges_v": [0], "edge_direction_truths": [[0.0, 0.0, 0.0, 0.0, 1.0, 0.0]], "edge_distance_truths": [[0.0, 1.0, 0.0]]}]}

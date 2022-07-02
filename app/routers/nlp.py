@@ -143,8 +143,8 @@ def train_models(file):
 
 
 # train_models("dataset.json")
-distance_model, direction_model = load_models()
-print(distance_model, direction_model)
+# distance_model, direction_model = load_models()
+# print(distance_model, direction_model)
 
 
 class NLPEngine:
@@ -301,8 +301,7 @@ async def save_example(array: Text):
                     embedding += np.array(model[word])
             edge_features[len(edge_words) - 1] = embedding.tolist()
 
-    example = {'node_words': node_words, 'edge_words': edge_words, 'node_features': node_features.tolist(),
-               'edge_features': edge_features.tolist(),
+    example = {'node_words': node_words, 'edge_words': edge_words,
                'edges_u': edges_u, 'edges_v': edges_v, 'edge_direction_truths': edge_direction_truths.tolist(),
                'edge_distance_truths': edge_distance_truths.tolist()}
 
@@ -352,6 +351,20 @@ def predict_results(graph, node_features, edge_features, graph_tuples):
     num_nodes = len(node_features)
     graph_tuples = json.loads(graph_tuples)
     graph_tuples = graph_tuples["array"]
+
+    array = []
+    for _tuple in graph_tuples:
+        _tuple['animate'] = False
+        # for word in _tuple['relation'].split():
+        #     for b_word in base_animate_words:
+        #         if model.__contains__(word) and model.similarity(word, b_word) > 0.8:
+        #             _tuple['animate'] = True
+    for _tuple in graph_tuples:
+        array.append({"sub": _tuple["sub"], "obj": _tuple["obj"], "relation": _tuple["relation"],
+                      "distancePrediction": 0,
+                      "directionPrediction": 0, "animate": _tuple['animate']})
+    response = {"array": array}
+    return json.dumps(array)
     # distance_tensors = distance_model(graph, torch.from_numpy(node_features.astype(np.float32)))
     # direction_tensors = direction_model(graph, torch.from_numpy(node_features.astype(np.float32)))
     direction_tensors = direction_model(graph, torch.from_numpy(node_features.astype(np.float32)), torch.from_numpy(edge_features.astype(np.float32)))
@@ -384,17 +397,16 @@ def predict_results(graph, node_features, edge_features, graph_tuples):
     dir_final = []
     for value in predict_dir_out:
         dir_final.append(value.tolist().index(1.0) + 1)
-    array = []
+
+    # for distance_pred, direction_pred, _tuple in zip(dis_final, dir_final, graph_tuples):
+    #     array.append({"sub": _tuple["sub"], "obj": _tuple["obj"], "relation": _tuple["relation"],
+    #                   "distancePrediction": distance_pred,
+    #                   "directionPrediction": direction_pred, "animate": _tuple['animate']})
+    #
     for _tuple in graph_tuples:
-        _tuple['animate'] = False
-        for word in _tuple['relation'].split():
-            for b_word in base_animate_words:
-                if model.__contains__(word) and model.similarity(word, b_word) > 0.8:
-                    _tuple['animate'] = True
-    for distance_pred, direction_pred, _tuple in zip(dis_final, dir_final, graph_tuples):
         array.append({"sub": _tuple["sub"], "obj": _tuple["obj"], "relation": _tuple["relation"],
-                      "distancePrediction": distance_pred,
-                      "directionPrediction": direction_pred, "animate": _tuple['animate']})
+                      "distancePrediction": 0,
+                      "directionPrediction": 0, "animate": _tuple['animate']})
     response = {"array": array}
     return json.dumps(array)
 
