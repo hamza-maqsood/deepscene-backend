@@ -361,8 +361,8 @@ def predict_results(graph, node_features, edge_features, graph_tuples):
         #             _tuple['animate'] = True
     for _tuple in graph_tuples:
         array.append({"sub": _tuple["sub"], "obj": _tuple["obj"], "relation": _tuple["relation"],
-                      "distancePrediction": 0,
-                      "directionPrediction": 0, "animate": _tuple['animate']})
+                      "distancePrediction": 1,
+                      "directionPrediction": 3, "animate": _tuple['animate']})
     response = {"array": array}
     return json.dumps(array)
     # distance_tensors = distance_model(graph, torch.from_numpy(node_features.astype(np.float32)))
