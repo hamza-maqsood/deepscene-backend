@@ -47,11 +47,23 @@ app.include_router(entity.router)
 app.include_router(nlp.router)
 
 from gensim.models import KeyedVectors
+# load word2vec
 model = KeyedVectors.load_word2vec_format('./app/resources/word2vec-model.bin', binary=True)
 
+# load distance and direction GCNs
+# save_base_path = './app/resources/'
+# distance_model = DistanceModel()
+# distance_model.load_state_dict(torch.load(save_base_path + 'distance_model.pt'))
+
+# direction_model = DirectionModel()
+# direction_model.load_state_dict(torch.load(save_base_path + 'direction_model.pt'))
+
+
+# with open("./app/resources/dataset.json", "r") as dataset:
 with open("./app/resources/dataset.json", "r") as dataset:
     global json_store
     json_store = json.load(dataset)
+    print("dataset size: " + str(len(json_store['array'])))
     dataset.close()
 
 
